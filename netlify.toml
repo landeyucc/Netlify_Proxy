@@ -9,7 +9,7 @@
 [build.environment]
   # 代理配置 - 可在控制台覆盖以更改代理目标
   UPSTREAM_DOMAIN = "baidu.com"  # 目标代理域名（控制台配置将优先）
-  CUSTOM_DOMAIN = "bad.is91.pp.ua"  # 自定义域名（控制台配置将优先）
+  CUSTOM_DOMAIN = "your-domain.com"  # 自定义域名（控制台配置将优先）
   
   # 认证配置 - 重要：生产环境请在控制台配置敏感信息
   AUTH_PASSWORD_HASH = "da7886fb8f45b3bf6e77884f97ae5fb4275ee792ecaa629fa2869d7a251d0c0d5fbf1a5a68f6365d67bbfd7e03a4b0fd0857204bf9fbc44bcaa5f7ac5b0e3b8d"  # 密码13904400的SHA512哈希（建议在控制台配置）

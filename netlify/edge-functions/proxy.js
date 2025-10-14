@@ -1,4 +1,3 @@
-// ===================== 核心配置（从环境变量读取） =====================
 // 注意：在Netlify平台上，控制台配置的环境变量优先级高于toml文件中配置的环境变量
 // Deno.env.get()会首先尝试获取控制台设置的环境变量，然后是toml文件中的配置，最后才使用默认值
 const upstream = Deno.env.get('UPSTREAM_DOMAIN') || 'baidu.com'; // 目标代理域名，从环境变量读取，无法读取则使用默认值baidu.com
@@ -38,7 +37,6 @@ function getEnvBoolean(envName, defaultValue) {
   return Boolean(strValue);
 }
 
-// ===================== 辅助函数（不变，保留） =====================
 async function computeSHA512(plainText) {
   const encoder = new TextEncoder();
   const data = encoder.encode(plainText);
@@ -130,7 +128,6 @@ function setAuthCookie(request) {
   return `${AUTH_CONFIG.COOKIE_NAME}=valid; expires=${expireDate.toUTCString()}; path=/; SameSite=Lax; ${isHttps ? 'Secure; HttpOnly;' : ''}`;
 }
 
-// ===================== 核心逻辑（关键修正：URL路径传递） =====================
 export default async function handler(request) {
   return fetchAndApply(request);
 }
@@ -180,11 +177,11 @@ async function fetchAndApply(request) {
     }
   }
 
-  // 3. 反代逻辑（关键修正：完整传递路径和参数）
+  // 3. 反代逻辑（完整传递路径和参数）
   const region = requestHeaders.get('x-nf-client-country')?.toUpperCase() || '';
   const url_host = url.host;
 
-  // 修正1：在本地环境（localhost或127.0.0.1）禁用HTTP转HTTPS重定向，避免SSL协议错误
+  // 在本地环境（localhost或127.0.0.1）禁用HTTP转HTTPS重定向，避免SSL协议错误
   // NETLIFY_ENV环境变量同样遵循控制台配置优先于toml文件的规则
   const isLocalhost = url.hostname === 'localhost' || url.hostname === '127.0.0.1';
   const isProduction = Deno.env.get('NETLIFY_ENV') === 'production';
@@ -193,13 +190,13 @@ async function fetchAndApply(request) {
     return Response.redirect(url.href, 301);
   }
 
-  // 修正2：图片搜索场景适配时，保留完整URL（原逻辑仅替换host，丢失路径，此处修正）
+  // 图片搜索场景适配时，保留完整URL
   const isImageSearch = url.href.includes('tbm=isch') || url.href.includes('/img');
   const upstream_domain = isImageSearch ? upstream_v4 : upstream;
   // 关键：重新构造目标URL，确保路径（pathname）和参数（search）不丢失
   const targetUrl = new URL(url.pathname + url.search, `https://${upstream_domain}`); // 完整拼接路径+参数
 
-  // 修正3：黑名单区域拦截（原逻辑正确，保留）
+  // 黑名单区域拦截
   if (blocked_region.includes(region)) {
     return new Response('Access denied: WorkersProxy is not available in your region yet.', {
       status: 403,
@@ -207,16 +204,16 @@ async function fetchAndApply(request) {
     });
   }
 
-  // 修正4：构造请求头（增加 Accept 头，避免目标网站返回404）
+  // 构造请求头（增加 Accept 头，避免目标网站返回404）
   const new_request_headers = new Headers(requestHeaders);
   new_request_headers.set('Host', upstream_domain);
-  new_request_headers.set('Referer', targetUrl.href); // 引用目标URL，而非原URL
+  new_request_headers.set('Referer', targetUrl.href); 
   new_request_headers.set('Accept', 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8'); // 模拟浏览器请求头
   new_request_headers.delete('cookie'); // 避免跨域Cookie冲突
   new_request_headers.delete('x-nf-client-country'); // 删除Netlify特有头，避免目标网站识别
 
   try {
-    // 修正5：发起请求时使用完整的 targetUrl，而非原 url.href（核心修正）
+    // 发起请求时使用完整的 targetUrl
     const original_response = await fetch(targetUrl.href, {
       method: request.method,
       headers: new_request_headers,
@@ -225,7 +222,7 @@ async function fetchAndApply(request) {
       cache: 'no-store', // 禁用缓存，避免404缓存
     });
 
-    // 修正6：处理目标网站返回的404（增加日志，方便排查）
+    // 处理目标网站返回的404（增加日志，方便排查）
     if (original_response.status === 404) {
       console.error(`Target site returned 404: ${targetUrl.href}`); // 本地测试时查看终端日志
       return new Response(`Proxy failed: Target URL ${targetUrl.href} returns 404`, {
@@ -234,7 +231,7 @@ async function fetchAndApply(request) {
       });
     }
 
-    // 后续响应处理（原逻辑正确，保留）
+    // 后续响应处理
     const new_response_headers = new Headers(original_response.headers);
     new_response_headers.delete('content-security-policy');
     new_response_headers.delete('content-security-policy-report-only');
@@ -259,7 +256,7 @@ async function fetchAndApply(request) {
       headers: new_response_headers,
     });
   } catch (err) {
-    // 修正7：捕获请求错误（如目标域名无法解析）
+    // 捕获请求错误（如目标域名无法解析）
     console.error(`Proxy request failed: ${err.message}`);
     return new Response(`Proxy error: ${err.message}`, {
       status: 500,
@@ -268,7 +265,7 @@ async function fetchAndApply(request) {
   }
 }
 
-// 原有内容替换函数（修正：确保替换时保留路径）
+// 原有内容替换函数（确保替换时保留路径）
 async function replace_response_text(text, upstream_domain, custom_domain) {
   for (const [search_str, replace_str] of Object.entries(replace_dict)) {
     const resolved_search = search_str === '$upstream' ? `https://${upstream_domain}` : search_str; // 完整匹配带https的域名
