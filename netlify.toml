@@ -1,0 +1,35 @@
+[build]
+  # 纯反代无需构建命令，保留空配置即可
+  command = ""
+  publish = "." # 占位，避免Netlify报错
+
+# 本地测试用，生产环境建议从控制台配置
+# 注意：在Netlify平台上，控制台配置的环境变量优先级高于此toml文件中的配置
+# 这确保了敏感信息可以安全地在控制台配置，同时允许在toml中设置默认值用于本地开发
+[build.environment]
+  # 代理配置 - 可在控制台覆盖以更改代理目标
+  UPSTREAM_DOMAIN = "baidu.com"  # 目标代理域名（控制台配置将优先）
+  CUSTOM_DOMAIN = "bad.is91.pp.ua"  # 自定义域名（控制台配置将优先）
+  
+  # 认证配置 - 重要：生产环境请在控制台配置敏感信息
+  AUTH_PASSWORD_HASH = "da7886fb8f45b3bf6e77884f97ae5fb4275ee792ecaa629fa2869d7a251d0c0d5fbf1a5a68f6365d67bbfd7e03a4b0fd0857204bf9fbc44bcaa5f7ac5b0e3b8d"  # 密码13904400的SHA512哈希（建议在控制台配置）
+  ENABLE_PASSWORD = "true"  # 布尔值，兼容0与1（控制台配置将优先）
+  COOKIE_EXPIRE_MINUTES = "60"  # Cookie有效期（分钟）（控制台配置将优先）
+  
+  # 环境配置 - 本地测试用，生产环境请在控制台设置为"production"
+  NETLIFY_ENV = "development"  # 本地测试用，生产环境改为 "production"（控制台配置将优先）
+
+# 关键：确保所有路径都触发proxy函数（包括根路径、子路径、API路径）
+[[edge_functions]]
+  function = "proxy"
+  path = "/*"
+
+[functions]
+  directory = "netlify/edge-functions"
+
+# 可选：禁止Netlify缓存404页面
+[[headers]]
+  for = "/*"
+  [headers.values]
+    Cache-Control = "no-store, max-age=0"
+    Pragma = "no-cache"
