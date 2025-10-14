@@ -10,7 +10,8 @@
 <br>详见**[Cloudflare条款](https://www.cloudflare-cn.com/terms/)**
 <br>第2.2.1条：(j) use the Services to provide a virtual private network or other similar proxy services.
 
-~~&nbsp;&nbsp;&nbsp;&nbsp;学姐~，你也不想你的CF账号被永久封禁吧？&nbsp;&nbsp;&nbsp;&nbsp;~~
+~~学姐~，你也不想你的CF账号被永久封禁吧？~~
+
 
 ## 功能特点
 
