@@ -83,16 +83,16 @@ function showHelp() {
   console.log('\nSHA-512哈希值生成与验证工具');
   console.log('===========================');
   console.log('用法:');
-  console.log('  node verify_hash.js --generate [password]   生成密码的哈希值');
-  console.log('  node verify_hash.js --verify [password] [hash]  验证密码与哈希值是否匹配');
-  console.log('  node verify_hash.js --help                  显示帮助信息');
+  console.log('  node hash_tool.js --generate [password]   生成密码的哈希值');
+  console.log('  node hash_tool.js --verify [password] [hash]  验证密码与哈希值是否匹配');
+  console.log('  node hash_tool.js --help                  显示帮助信息');
   console.log('\n参数:');
   console.log('  --generate, -g   生成模式');
   console.log('  --verify, -v     验证模式');
   console.log('  --help, -h       显示帮助信息');
   console.log('\n示例:');
-  console.log('  node verify_hash.js -g 123456');
-  console.log('  node verify_hash.js -v 123456 e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855...');
+  console.log('  node hash_tool.js -g 123456');
+  console.log('  node hash_tool.js -v 123456 e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855...');
   console.log('');
 }
 

@@ -136,7 +136,7 @@ async function fetchAndApply(request) {
   const url = new URL(request.url);
   const requestHeaders = request.headers;
 
-  // 1. 处理验证请求（不变）
+  // 1. 处理验证请求
   if (url.pathname === AUTH_CONFIG.VERIFY_PATH && request.method === 'POST') {
     try {
       const requestBody = await request.json();
@@ -166,7 +166,7 @@ async function fetchAndApply(request) {
     }
   }
 
-  // 2. 检查验证状态（新增：根据ENABLE_PASSWORD环境变量决定是否跳过验证）
+  // 2. 检查验证状态（根据ENABLE_PASSWORD环境变量决定是否跳过验证）
   if (AUTH_CONFIG.ENABLE_PASSWORD) {
     const authCookie = getAuthCookie(requestHeaders);
     if (!authCookie || authCookie !== 'valid') {
