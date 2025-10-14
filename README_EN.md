@@ -11,6 +11,7 @@ This is a reverse proxy service implemented using Netlify Edge Functions, provid
 - **SSL Environment Detection**: Identifies local environments (localhost/127.0.0.1) through hostname to avoid SSL protocol errors by not enforcing SSL.
 - **Multiple URL Rewrites**: Supports domain name replacement and path preservation, with customizable URL rules as needed.
 - **Cross-Origin Request Handling**: Configures appropriate CORS headers to ensure cross-origin resources load properly.
+- **Intelligent Cache System**: Sets different caching strategies based on resource types to improve response speed and reduce bandwidth usage.
 
 ## Local Development
 
@@ -37,6 +38,45 @@ This is a reverse proxy service implemented using Netlify Edge Functions, provid
    ```
 
 4. Visit http://localhost:[port-number]
+
+## Environment Variable Configuration
+
+The proxy service supports multiple environment variable configurations, which can be set in the `netlify.toml` file or configured in the Netlify console.
+
+> **Note**: On the Netlify platform, environment variables configured in the console take precedence over those configured in the `netlify.toml` file.
+> This is Netlify's default behavior, ensuring that sensitive information can be safely configured in the console while allowing default values to be set in the toml for local development.
+
+### All Environment Variables Summary Table
+
+| Environment Variable | Default Value | Type | Description |
+|---------------------|---------------|------|-------------|
+| `UPSTREAM_DOMAIN` | `baidu.com` | Proxy Config | Target proxy domain, recommended to modify to the target source domain |
+| `UPSTREAM_V4_DOMAIN` | Same as UPSTREAM_DOMAIN | Proxy Config | IPv4 proxy domain, used for special scenarios such as image search |
+| `CUSTOM_DOMAIN` | `your-domain.com` | Proxy Config | Custom domain name for URL rewriting, as the entry domain for access |
+| `AUTH_PASSWORD_HASH` | `da7886fb8f45b3bf6e77884f97ae5fb4275ee792ecaa629fa2869d7a251d0c0d5fbf1a5a68f6365d67bbfd7e03a4b0fd0857204bf9fbc44bcaa5f7ac5b0e3b8d` | Auth Config | SHA-512 hash of password, corresponding to default password 13904400 |
+| `ENABLE_PASSWORD` | `true` | Auth Config | Enable/disable password verification (boolean, compatible with 0 and 1) |
+| `COOKIE_EXPIRE_MINUTES` | `60` | Auth Config | Cookie expiration time (minutes), default 60 minutes |
+| `NETLIFY_ENV` | `production` | Env Config | Environment identifier (development/production) |
+| `ENABLE_CACHE` | `true` | Cache Config | Whether to enable cache functionality |
+| `CACHE_TTL` | `14400` (4 hours) | Cache Config | Standard cache time (seconds), suitable for dynamic content like HTML pages |
+| `STATIC_CACHE_TTL` | `86400` (1 day) | Cache Config | Static resource cache time (seconds), suitable for CSS, JavaScript, and JSON files |
+| `IMAGE_CACHE_TTL` | `604800` (7 days) | Cache Config | Image resource cache time (seconds), suitable for image files |
+
+## Cache Description
+
+The proxy service includes an intelligent cache system that automatically sets different caching strategies based on resource types to improve response speed and reduce bandwidth usage.
+
+### Cache Type Strategies
+
+- **HTML Pages**: Use standard cache time (default 4 hours)
+- **Static Resources**: CSS, JavaScript, JSON and other files use longer cache time (default 1 day)
+- **Image Resources**: Use the longest cache time (default 7 days)
+
+### Cache Control
+
+1. For local testing, cache configurations can be set in the `netlify.toml` file
+2. In production environment, it is recommended to configure these environment variables in the Netlify console
+3. A `X-Cache` header will be added to responses with value `HIT` (cache hit) or `MISS` (cache miss) for debugging purposes
 
 ## Password Verification
 
@@ -105,21 +145,6 @@ node hash_tool.js -v [test-password] daef4953b9783365cad6615223720506cc46c5167cd
 ```
 
 ## Configuration Instructions
-
-### Environment Variable Configuration
-
-> **Note**: On the Netlify platform, environment variables configured in the console take precedence over those configured in the `netlify.toml` file.
-> This is Netlify's default behavior, ensuring that sensitive information can be safely configured in the console while allowing default values to be set in the toml for local development.
-
-The project supports the following key environment variables, which can be set in the `netlify.toml` file or configured in the Netlify console:
-
-- **UPSTREAM_DOMAIN**: Target proxy domain, default: baidu.com, recommended to modify according to the actual target source domain.
-- **UPSTREAM_V4_DOMAIN**: IPv4 proxy domain, used for special scenarios such as image search. If the source only supports IPv4 access, it is recommended to modify it to the IPv4 address of the source.
-- **CUSTOM_DOMAIN**: Custom domain name for URL rewriting, as the entry domain for access
-- **AUTH_PASSWORD_HASH**: SHA-512 hash value of the password
-- **ENABLE_PASSWORD**: Enable/disable password verification (boolean, default: true, compatible with 0 and 1)
-- **COOKIE_EXPIRE_MINUTES**: Cookie expiration time (minutes), default 60 minutes
-- **NETLIFY_ENV**: Environment identifier (development/production, default: production)
 
 ### netlify.toml
 
