@@ -3,18 +3,6 @@
 const upstream = Deno.env.get('UPSTREAM_DOMAIN') || 'baidu.com'; // 目标代理域名，从环境变量读取，无法读取则使用默认值baidu.com
 const upstream_v4 = Deno.env.get('UPSTREAM_V4_DOMAIN') || upstream; // IPv4代理域名，默认使用主域名
 const blocked_region = ['TK'];
-
-// 缓存配置
-const CACHE_CONFIG = {
-  // 缓存时间（秒）
-  CACHE_TTL: parseInt(Deno.env.get('CACHE_TTL') || '14400', 10), // 默认4小时
-  STATIC_CACHE_TTL: parseInt(Deno.env.get('STATIC_CACHE_TTL') || '86400', 10), // 静态资源默认1天
-  IMAGE_CACHE_TTL: parseInt(Deno.env.get('IMAGE_CACHE_TTL') || '604800', 10), // 图片资源默认7天
-  // 缓存键前缀
-  CACHE_KEY_PREFIX: 'proxy_cache_',
-  // 启用/禁用缓存
-  ENABLE_CACHE: getEnvBoolean('ENABLE_CACHE', true),
-};
 // 自定义域名，从环境变量读取，无法读取且未设置默认值时将无法使用
 const customDomain = Deno.env.get('CUSTOM_DOMAIN') || 'your-custom-domain.com';
 const replace_dict = {
@@ -225,36 +213,14 @@ async function fetchAndApply(request) {
   new_request_headers.delete('x-nf-client-country'); // 删除Netlify特有头，避免目标网站识别
 
   try {
-    // 缓存键生成
-  const cacheKey = `${CACHE_CONFIG.CACHE_KEY_PREFIX}${url.pathname}${url.search}`;
-  
-  // 尝试从缓存中获取响应
-  let cachedResponse = null;
-  if (CACHE_CONFIG.ENABLE_CACHE && request.method === 'GET') {
-    try {
-      // 使用Deno的缓存API
-      const cache = await caches.open('proxy-cache');
-      cachedResponse = await cache.match(cacheKey);
-    } catch (err) {
-      console.warn('Cache read error:', err.message);
-    }
-  }
-  
-  // 如果缓存命中，则直接返回缓存的响应
-  if (cachedResponse) {
-    const clonedResponse = new Response(cachedResponse.body, cachedResponse);
-    clonedResponse.headers.set('X-Cache', 'HIT');
-    return clonedResponse;
-  }
-  
-  // 发起请求时使用完整的 targetUrl
-  const original_response = await fetch(targetUrl.href, {
-    method: request.method,
-    headers: new_request_headers,
-    body: request.body,
-    redirect: 'follow',
-    cache: CACHE_CONFIG.ENABLE_CACHE ? 'default' : 'no-store', // 根据配置决定是否使用缓存
-  });
+    // 发起请求时使用完整的 targetUrl
+    const original_response = await fetch(targetUrl.href, {
+      method: request.method,
+      headers: new_request_headers,
+      body: request.body,
+      redirect: 'follow',
+      cache: 'no-store', // 禁用缓存，避免404缓存
+    });
 
     // 处理目标网站返回的404（增加日志，方便排查）
     if (original_response.status === 404) {
@@ -270,29 +236,11 @@ async function fetchAndApply(request) {
     new_response_headers.delete('content-security-policy');
     new_response_headers.delete('content-security-policy-report-only');
     new_response_headers.delete('clear-site-data');
-    
-    // 根据内容类型设置不同的缓存策略
-    const content_type = new_response_headers.get('content-type') || '';
-    let cacheControlValue = `public, max-age=${CACHE_CONFIG.CACHE_TTL}`;
-    
-    if (content_type.includes('image/')) {
-      // 图片资源缓存时间更长
-      cacheControlValue = `public, max-age=${CACHE_CONFIG.IMAGE_CACHE_TTL}`;
-    } else if (content_type.includes('text/css') || 
-              content_type.includes('application/javascript') || 
-              content_type.includes('application/json')) {
-      // 静态资源缓存时间适中
-      cacheControlValue = `public, max-age=${CACHE_CONFIG.STATIC_CACHE_TTL}`;
-    } else if (content_type.includes('text/html')) {
-      // HTML页面使用标准缓存时间
-      cacheControlValue = `public, max-age=${CACHE_CONFIG.CACHE_TTL}`;
-    }
-    
-    new_response_headers.set('cache-control', cacheControlValue);
+    new_response_headers.set('cache-control', 'public, max-age=14400');
     new_response_headers.set('access-control-allow-origin', '*');
     new_response_headers.set('access-control-allow-credentials', 'true');
-    new_response_headers.set('X-Cache', 'MISS'); // 标记为未命中缓存
-    
+
+    const content_type = new_response_headers.get('content-type') || '';
     let response_body;
     if (content_type.includes('text/html') && content_type.includes('UTF-8')) {
       let html_text = await original_response.text();
@@ -302,27 +250,11 @@ async function fetchAndApply(request) {
       response_body = original_response.body;
     }
 
-    // 创建响应对象
-    const response = new Response(response_body, {
+    return new Response(response_body, {
       status: original_response.status,
       statusText: original_response.statusText,
       headers: new_response_headers,
     });
-    
-    // 缓存GET请求的成功响应
-    if (CACHE_CONFIG.ENABLE_CACHE && 
-        request.method === 'GET' && 
-        response.status < 400) {
-      try {
-        const cache = await caches.open('proxy-cache');
-        // 克隆响应以便缓存
-        await cache.put(cacheKey, response.clone());
-      } catch (err) {
-        console.warn('Cache write error:', err.message);
-      }
-    }
-    
-    return response;
   } catch (err) {
     // 捕获请求错误（如目标域名无法解析）
     console.error(`Proxy request failed: ${err.message}`);
