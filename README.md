@@ -10,9 +10,6 @@
 <br>详见**[Cloudflare条款](https://www.cloudflare-cn.com/terms/)**
 <br>第2.2.1条：(j) use the Services to provide a virtual private network or other similar proxy services.
 
-~~学姐~，你也不想你的CF账号被永久封禁吧？~~
-
-
 ## 功能特点
 
 - **密码验证保护**：通过SHA-512哈希验证密码，确保只有授权用户可以访问。
@@ -161,3 +158,4 @@ node hash_tool.js -v [测试密码] daef4953b9783365cad6615223720506cc46c5167cd1
 - 根据需要调整 `COOKIE_EXPIRE_MINUTES` 来控制会话有效期
 - 监控代理请求日志，及时发现异常
 - 建议在Netlify控制台配置敏感环境变量，而非硬编码在配置文件中
+
