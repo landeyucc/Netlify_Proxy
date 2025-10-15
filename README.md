@@ -6,7 +6,7 @@
 <br>一般情况下，如果源站没有使用反爬虫机制与访问验证机制则可直接镜像源站内容。
 <br>此项目应在合规的情况下使用，在某些情况下可能会违反源站的服务条款，或直接造成违反法律行为，用户需自行承担风险。
 
->目前Cloudflare条款收紧策略，明确表示不得使用其作为虚拟专用网络或其他类似代理的服务。于是我基于某网络上的野生代码进行修改，并查阅其他托管平台并最终选择Netlify，因为没有相关条款限制再加上许多项目都是基于Netlify进行托管的。
+>目前Cloudflare条款收紧策略，明确表示不得使用其作为虚拟专用网络或其他类似代理的服务，这就导致了Worker无法使用其作为反向代理。于是基于某作者（忘记出处了，抱歉）的代码进行修改，并查阅其他托管平台并最终选择Netlify，因为没有相关条款限制再加上许多项目都是基于Netlify进行托管的，故采用，但是依旧可以通过Cloudflare的CDN进行部署，只是代理可能产生的风险不在Cloudflare之上。
 <br>详见**[Cloudflare条款](https://www.cloudflare-cn.com/terms/)**
 <br>第2.2.1条：(j) use the Services to provide a virtual private network or other similar proxy services.
 
