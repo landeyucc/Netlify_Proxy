@@ -117,7 +117,7 @@ The project supports the following key environment variables, which can be set i
 
 | Environment Variable | Description | Default Value |
 |---------------------|-------------|---------------|
-| **UPSTREAM_DOMAIN** | Target proxy domain, recommended to modify according to the actual target source domain | baidu.com |
+| **UPSTREAM_DOMAIN** | Target proxy domain, recommended to modify according to the actual target source domain | github.com |
 | **UPSTREAM_V4_DOMAIN** | IPv4 proxy domain, used for special scenarios such as image search. If the source only supports IPv4 access, it is recommended to modify it to the IPv4 address of the source | - |
 | **CUSTOM_DOMAIN** | Custom domain name for URL rewriting, as the entry domain for access | - |
 | **AUTH_PASSWORD_HASH** | SHA-512 hash value of the password | - |

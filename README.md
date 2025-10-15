@@ -122,7 +122,7 @@ node hash_tool.js -v [测试密码] daef4953b9783365cad6615223720506cc46c5167cd1
 
 | 环境变量 | 描述 | 默认值 |
 |---------|------|-------|
-| **UPSTREAM_DOMAIN** | 目标代理域名，建议根据实际情况修改为目标源站域名 | baidu.com |
+| **UPSTREAM_DOMAIN** | 目标代理域名，建议根据实际情况修改为目标源站域名 | github.com |
 | **UPSTREAM_V4_DOMAIN** | IPv4代理域名，用于特殊场景如图片搜索，如果源站只支持IPv4访问，建议修改为源站的IPv4地址 | - |
 | **CUSTOM_DOMAIN** | 自定义域名，用于URL重写，作为访问的入口域名 | - |
 | **AUTH_PASSWORD_HASH** | 密码的SHA-512哈希值 | - |

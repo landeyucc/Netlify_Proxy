@@ -8,7 +8,7 @@
 # 这确保了敏感信息可以安全地在控制台配置，同时允许在toml中设置默认值用于本地开发
 [build.environment]
   # 代理配置 - 可在控制台覆盖以更改代理目标
-  UPSTREAM_DOMAIN = "baidu.com"  # 目标代理域名（控制台配置将优先）
+  UPSTREAM_DOMAIN = "github.com"  # 目标代理域名（控制台配置将优先）
   CUSTOM_DOMAIN = "your-domain.com"  # 自定义域名（控制台配置将优先）
   
   # 认证配置 - 重要：生产环境请在控制台配置敏感信息

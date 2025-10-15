@@ -1,6 +1,6 @@
 // 注意：在Netlify平台上，控制台配置的环境变量优先级高于toml文件中配置的环境变量
 // Deno.env.get()会首先尝试获取控制台设置的环境变量，然后是toml文件中的配置，最后才使用默认值
-const upstream = Deno.env.get('UPSTREAM_DOMAIN') || 'baidu.com'; // 目标代理域名，从环境变量读取，无法读取则使用默认值baidu.com
+const upstream = Deno.env.get('UPSTREAM_DOMAIN') || 'github.com'; // 目标代理域名，从环境变量读取，无法读取则使用默认值github.com
 const upstream_v4 = Deno.env.get('UPSTREAM_V4_DOMAIN') || upstream; // IPv4代理域名，默认使用主域名
 const blocked_region = ['TK'];
 
@@ -393,12 +393,55 @@ async function fetchAndApply(request) {
   }
 }
 
-// 原有内容替换函数（确保替换时保留路径）
+// 增强的URL重写函数，确保能正确处理源站完整URL到代理站URL的转换
 async function replace_response_text(text, upstream_domain, custom_domain) {
-  for (const [search_str, replace_str] of Object.entries(replace_dict)) {
-    const resolved_search = search_str === '$upstream' ? `https://${upstream_domain}` : search_str; // 完整匹配带https的域名
-    const resolved_replace = replace_str === '$custom_domain' ? `https://${custom_domain}` : replace_str;
-    text = text.replace(new RegExp(resolved_search, 'g'), resolved_replace);
+  // 正则表达式转义函数，确保特殊字符正确处理
+  function escapeRegExp(string) {
+    return string.replace(/[.*+?^${}()|\[\]\\]/g, '\\$&');
   }
+  
+  // 首先处理基本的替换字典规则
+  for (const [search_str, replace_str] of Object.entries(replace_dict)) {
+    const resolved_search = search_str === '$upstream' ? `https://${upstream_domain}` : search_str;
+    const resolved_replace = replace_str === '$custom_domain' ? `https://${custom_domain}` : replace_str;
+    text = text.replace(new RegExp(escapeRegExp(resolved_search), 'g'), resolved_replace);
+  }
+  
+  // 处理页面中的所有链接属性，将源站URL转换为代理站URL
+  // 这是最关键的一步，将捕获所有的href和src属性中的源站URL
+  const linkAttributesRegex = new RegExp(`(href|src|action|formaction|data)\s*=\s*["'](https?:)?//${escapeRegExp(upstream_domain)}/?([^"'#?]*)`, 'gi');
+  text = text.replace(linkAttributesRegex, (match, attr, protocol, path) => {
+    // 转换为代理站完整URL，例如：https://a.cc/path -> https://b.cc/path
+    const fullPath = path ? `/${path}` : '/';
+    return `${attr}="https://${custom_domain}${fullPath}"`;
+  });
+  
+  // 处理JavaScript中的完整URL字符串
+  const jsUrlRegex = new RegExp(`['"](https?:)?//${escapeRegExp(upstream_domain)}/?([^'"]*)['"]`, 'g');
+  text = text.replace(jsUrlRegex, (match, protocol, path) => {
+    const fullPath = path ? `/${path}` : '/';
+    return `"https://${custom_domain}${fullPath}"`;
+  });
+  
+  // 处理CSS中的URL引用
+  const cssUrlRegex = new RegExp(`url\(\s*['"]?(https?:)?//${escapeRegExp(upstream_domain)}/?([^'")]*)['"]?\s*\)`, 'g');
+  text = text.replace(cssUrlRegex, (match, protocol, path) => {
+    const fullPath = path ? `/${path}` : '/';
+    return `url(https://${custom_domain}${fullPath})`;
+  });
+  
+  // 处理相对协议URL（如//a.cc/c）
+  const protocolRelativeRegex = new RegExp(`//${escapeRegExp(upstream_domain)}/?([^\s"'<>]+)`, 'g');
+  text = text.replace(protocolRelativeRegex, (match, path) => {
+    return `https://${custom_domain}${path ? `/${path}` : '/'}`;
+  });
+  
+  // 处理无协议的绝对路径（确保不影响相对路径）
+  const absolutePathRegex = new RegExp(`(["'\s(])/${escapeRegExp(upstream_domain)}/?([^"'#?\s]*)`, 'g');
+  text = text.replace(absolutePathRegex, (match, prefix, path) => {
+    const fullPath = path ? `/${path}` : '/';
+    return `${prefix}https://${custom_domain}${fullPath}`;
+  });
+  
   return text;
 }
