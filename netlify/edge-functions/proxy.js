@@ -63,7 +63,7 @@ function getAuthCookie(headers) {
   return null;
 }
 
-function generateAuthHTML() {
+function generateAuthHTML(clientIP) {
   return `
   <!DOCTYPE html>
   <html lang="en">
@@ -79,11 +79,13 @@ function generateAuthHTML() {
       #submit { width: 100%; padding: 0.8rem; background: #165DFF; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 1rem; }
       #submit:hover { background: #0E4BDB; }
       #error { color: #ff4d4f; text-align: center; margin-top: 1rem; height: 1.2rem; }
+      .ip-info { text-align: center; margin-bottom: 1.5rem; font-size: 0.9rem; color: #666; background: #f8f9fa; padding: 0.5rem; border-radius: 4px; }
     </style>
   </head>
   <body>
     <div class="auth-box">
       <h1>Enter Proxy Password</h1>
+      <div class="ip-info">Your IP: ${clientIP}</div>
       <input type="password" id="password" placeholder="Input verification password" required>
       <button id="submit">Verify</button>
       <div id="error"></div>
@@ -179,7 +181,25 @@ async function fetchAndApply(request) {
   if (AUTH_CONFIG.ENABLE_PASSWORD) {
     const authCookie = getAuthCookie(requestHeaders);
     if (!authCookie || authCookie !== 'valid') {
-      return new Response(generateAuthHTML(), {
+      // 获取客户端IP地址用于显示在登录页面
+      let clientIP = requestHeaders.get('x-nf-client-connection-ip');
+      
+      if (!clientIP) {
+        const ipHeaders = ['x-forwarded-for', 'x-client-ip', 'cf-connecting-ip', 'true-client-ip', 'x-real-ip'];
+        for (const header of ipHeaders) {
+          const ipValue = requestHeaders.get(header);
+          if (ipValue) {
+            clientIP = header === 'x-forwarded-for' ? ipValue.split(',')[0].trim() : ipValue;
+            break;
+          }
+        }
+      }
+      
+      if (!clientIP) {
+        clientIP = '127.0.0.1';
+      }
+      
+      return new Response(generateAuthHTML(clientIP), {
         status: 200,
         headers: { 'Content-Type': 'text/html; charset=UTF-8' },
       });
@@ -219,10 +239,45 @@ async function fetchAndApply(request) {
   new_request_headers.set('Referer', targetUrl.href); 
   new_request_headers.set('Accept', 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8'); // 模拟浏览器请求头
   
-  // 添加X-Forwarded-For和X-Real-IP头，发送本地IP到目标网站，避免IP拦截
-  const clientIP = requestHeaders.get('x-nf-client-connection-ip') || requestHeaders.get('x-forwarded-for') || '127.0.0.1';
+  // 添加X-Forwarded-For和X-Real-IP头，发送客户端真实IP到目标网站，避免IP拦截
+  // 优先使用Netlify特有的客户端IP头，然后是常见的代理IP头
+  let clientIP = requestHeaders.get('x-nf-client-connection-ip'); // Netlify特有的客户端连接IP
+  
+  if (!clientIP) {
+    // 尝试从其他常见的代理IP头获取
+    const ipHeaders = [
+      'x-forwarded-for',      // 最常用的代理IP头
+      'x-client-ip',          // 其他常见代理头
+      'cf-connecting-ip',     // Cloudflare
+      'true-client-ip',       // Akamai/Ghostnet
+      'x-real-ip'             // Nginx等
+    ];
+    
+    for (const header of ipHeaders) {
+      const ipValue = requestHeaders.get(header);
+      if (ipValue) {
+        // x-forwarded-for可能包含多个IP（逗号分隔），取第一个
+        if (header === 'x-forwarded-for') {
+          clientIP = ipValue.split(',')[0].trim();
+        } else {
+          clientIP = ipValue;
+        }
+        break;
+      }
+    }
+  }
+  
+  // 如果仍然没有获取到IP，使用默认值
+  if (!clientIP) {
+    clientIP = '127.0.0.1';
+  }
+  
+  // 设置标准的代理IP头
   new_request_headers.set('X-Forwarded-For', clientIP);
   new_request_headers.set('X-Real-IP', clientIP);
+  // 增加额外的标准代理头
+  new_request_headers.set('X-Forwarded-Proto', url.protocol.replace(':', ''));
+  new_request_headers.set('X-Forwarded-Host', url.host);
   
   new_request_headers.delete('cookie'); // 避免跨域Cookie冲突
   new_request_headers.delete('x-nf-client-country'); // 删除Netlify特有头，避免目标网站识别
