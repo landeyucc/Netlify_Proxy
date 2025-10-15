@@ -16,6 +16,8 @@
 - **SSL环境检测**：通过主机名识别本地环境（localhost/127.0.0.1）不强制使用SSL环境，避免SSL协议错误。
 - **多URL重写**：支持域名替换和路径保留，可根据需要自定义URL规则。
 - **跨域请求处理**：配置适当的CORS头，确保跨域资源正常加载。
+- **缓存配置功能**：支持可配置的缓存机制，通过环境变量控制缓存时间，提高访问速度和减少源站请求。
+- **IP转发功能**：通过X-Forwarded-For和X-Real-IP头传递客户端真实IP，避免被源站拦截。
 
 ## 本地开发
 
@@ -118,13 +120,16 @@ node hash_tool.js -v [测试密码] daef4953b9783365cad6615223720506cc46c5167cd1
 
 项目支持以下关键环境变量配置，可在 `netlify.toml` 文件中设置或在Netlify控制台配置：
 
-- **UPSTREAM_DOMAIN**: 目标代理域名，默认：baidu.com，建议根据实际情况修改为目标源站域名。
-- **UPSTREAM_V4_DOMAIN**: IPv4代理域名，用于特殊场景如图片搜索，如果源站只支持IPv4访问，建议修改为源站的IPv4地址。
-- **CUSTOM_DOMAIN**: 自定义域名，用于URL重写，作为访问的入口域名
-- **AUTH_PASSWORD_HASH**: 密码的SHA-512哈希值
-- **ENABLE_PASSWORD**: 启用/禁用密码验证（布尔值，默认：true，兼容0与1）
-- **COOKIE_EXPIRE_MINUTES**: Cookie有效期（分钟），默认60分钟
-- **NETLIFY_ENV**: 环境标识（development/production，默认：production）
+| 环境变量 | 描述 | 默认值 |
+|---------|------|-------|
+| **UPSTREAM_DOMAIN** | 目标代理域名，建议根据实际情况修改为目标源站域名 | baidu.com |
+| **UPSTREAM_V4_DOMAIN** | IPv4代理域名，用于特殊场景如图片搜索，如果源站只支持IPv4访问，建议修改为源站的IPv4地址 | - |
+| **CUSTOM_DOMAIN** | 自定义域名，用于URL重写，作为访问的入口域名 | - |
+| **AUTH_PASSWORD_HASH** | 密码的SHA-512哈希值 | - |
+| **ENABLE_PASSWORD** | 启用/禁用密码验证（布尔值，兼容0与1） | true |
+| **COOKIE_EXPIRE_MINUTES** | Cookie有效期（分钟） | 60 |
+| **NETLIFY_ENV** | 环境标识 | production |
+| **CACHE_TTL** | 缓存过期时间（秒），设置为0可禁用缓存 | 7200（120分钟） |
 
 ### netlify.toml
 

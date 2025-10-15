@@ -11,6 +11,8 @@ This is a reverse proxy service implemented using Netlify Edge Functions, provid
 - **SSL Environment Detection**: Identifies local environments (localhost/127.0.0.1) through hostname to avoid SSL protocol errors by not enforcing SSL.
 - **Multiple URL Rewrites**: Supports domain name replacement and path preservation, with customizable URL rules as needed.
 - **Cross-Origin Request Handling**: Configures appropriate CORS headers to ensure cross-origin resources load properly.
+- **Cache Configuration Feature**: Supports configurable caching mechanism, controls cache time through environment variables, improves access speed and reduces origin server requests.
+- **IP Forwarding Feature**: Passes client's real IP through X-Forwarded-For and X-Real-IP headers to avoid being blocked by origin servers.
 
 ## Local Development
 
@@ -113,13 +115,16 @@ node hash_tool.js -v [test-password] daef4953b9783365cad6615223720506cc46c5167cd
 
 The project supports the following key environment variables, which can be set in the `netlify.toml` file or configured in the Netlify console:
 
-- **UPSTREAM_DOMAIN**: Target proxy domain, default: baidu.com, recommended to modify according to the actual target source domain.
-- **UPSTREAM_V4_DOMAIN**: IPv4 proxy domain, used for special scenarios such as image search. If the source only supports IPv4 access, it is recommended to modify it to the IPv4 address of the source.
-- **CUSTOM_DOMAIN**: Custom domain name for URL rewriting, as the entry domain for access
-- **AUTH_PASSWORD_HASH**: SHA-512 hash value of the password
-- **ENABLE_PASSWORD**: Enable/disable password verification (boolean, default: true, compatible with 0 and 1)
-- **COOKIE_EXPIRE_MINUTES**: Cookie expiration time (minutes), default 60 minutes
-- **NETLIFY_ENV**: Environment identifier (development/production, default: production)
+| Environment Variable | Description | Default Value |
+|---------------------|-------------|---------------|
+| **UPSTREAM_DOMAIN** | Target proxy domain, recommended to modify according to the actual target source domain | baidu.com |
+| **UPSTREAM_V4_DOMAIN** | IPv4 proxy domain, used for special scenarios such as image search. If the source only supports IPv4 access, it is recommended to modify it to the IPv4 address of the source | - |
+| **CUSTOM_DOMAIN** | Custom domain name for URL rewriting, as the entry domain for access | - |
+| **AUTH_PASSWORD_HASH** | SHA-512 hash value of the password | - |
+| **ENABLE_PASSWORD** | Enable/disable password verification (boolean, compatible with 0 and 1) | true |
+| **COOKIE_EXPIRE_MINUTES** | Cookie expiration time (minutes) | 60 |
+| **NETLIFY_ENV** | Environment identifier | production |
+| **CACHE_TTL** | Cache expiration time (seconds), set to 0 to disable caching | 7200 (120 minutes) |
 
 ### netlify.toml
 

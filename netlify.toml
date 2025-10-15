@@ -27,9 +27,9 @@
 [functions]
   directory = "netlify/edge-functions"
 
-# 可选：禁止Netlify缓存404页面
+# 仅对404页面设置不缓存
 [[headers]]
-  for = "/*"
+  for = "/*.404"
   [headers.values]
     Cache-Control = "no-store, max-age=0"
     Pragma = "no-cache"
